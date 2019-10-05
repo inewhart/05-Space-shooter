@@ -11,8 +11,9 @@ logger = logging.getLogger(__name__)
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN_TITLE = "Space Fall"
-NUM_ENEMIES = 15
+NUM_ENEMIES = 5
 STARTING_LOCATION = (400,100)
+Loc = (1000,1000)
 BULLET_DAMAGE = 10
 ENEMY_HP = 100
 HIT_SCORE = 10
@@ -38,6 +39,14 @@ class Enemy(arcade.Sprite):
         super().__init__("assets/asteroid.png", 0.5)
         self.hp = ENEMY_HP
         (self.center_x, self.center_y) = position
+class GameOver(arcade.Sprite):
+    def __init__(self):
+        super().__init__("assets/gameover.png", 0.5)
+        (self.center_x,self.center_y)= Loc
+class YouWin(arcade.Sprite):
+    def __init__(self):
+        super().__init__("assets/youwin.png", 0.5)
+        (self.center_x,self.center_y)= Loc
 class Window(arcade.Window):
 
     def __init__(self, width, height, title):
@@ -47,26 +56,35 @@ class Window(arcade.Window):
         os.chdir(file_path)
 
         self.set_mouse_visible(True)
-        arcade.set_background_color(open_color.blue_4)
+        arcade.set_background_color(open_color.black)
         self.bullet_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.player = Player()
         self.score = 0
+        self.gameover = GameOver()
+        self.youwin = YouWin()
 
 
 
     def setup(self):
         for i in range(NUM_ENEMIES):
-            x = 50 * (i+1) + 10
+            x = 130 * (i+1) + 10
             y = 500
             enemy = Enemy((x,y))
             self.enemy_list.append(enemy)  
 
     def update(self, delta_time):
         self.bullet_list.update()
-        
+        if self.score == 1000:
+            self.youwin.center_y = 300
+            self.youwin.center_x = 400
         for e in self.enemy_list:
-            e.center_y += -1
+            e.center_y += -0.2
+            if arcade.check_for_collision(e,self.player) == True or e.center_y < -300:
+                self.gameover.center_y = 300
+                self.gameover.center_x = 400
+                for f in self.enemy_list:
+                    f.kill()
             t = arcade.check_for_collision_with_list(e,self.bullet_list)
             for a in t:
                 a.kill()
@@ -81,6 +99,8 @@ class Window(arcade.Window):
         arcade.start_render()
         arcade.draw_text(str(self.score), 20, SCREEN_HEIGHT - 40, open_color.white, 16)
         self.player.draw()
+        self.gameover.draw()
+        self.youwin.draw()
         self.bullet_list.draw()
         self.enemy_list.draw()
 
@@ -88,7 +108,6 @@ class Window(arcade.Window):
 
 
     def on_mouse_motion(self, x, y, dx, dy):
-        """ Called to update our objects. Happens approximately 60 times per second."""
         self.player.center_x = x
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -96,6 +115,11 @@ class Window(arcade.Window):
         y = self.player.center_y + 15
         bullet = Bullet((x,y),(0,10),BULLET_DAMAGE)
         self.bullet_list.append(bullet)
+    def on_key_press(self, key, modifiers):
+
+        if key == arcade.key.Q:
+            sys.exit()
+
 def main():
     window = Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     window.setup()
